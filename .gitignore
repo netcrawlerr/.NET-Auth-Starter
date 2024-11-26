@@ -1,0 +1,5 @@
+.idea
+Api/bin
+Api/obj
+Api/appsettings.json
+Api/appsettings.Development.json
