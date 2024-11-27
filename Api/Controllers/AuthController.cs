@@ -44,13 +44,13 @@ public class AuthController : ControllerBase
 
             if (user == null)
             {
-                return Unauthorized("Invalid User");
+                return Unauthorized("User Not Found !");
             }
 
             var result = await _signInManager.CheckPasswordSignInAsync(
                 user,
                 loginRequestDto.Password,
-                false
+                lockoutOnFailure: true
             );
 
             if (!result.Succeeded)
@@ -119,5 +119,13 @@ public class AuthController : ControllerBase
         {
             return StatusCode(500, e);
         }
+    }
+
+    [HttpPost]
+    [Route("logout")]
+    public async Task<IActionResult> LogOut()
+    {
+        await _signInManager.SignOutAsync();
+        return Ok(new { message = "Successfully logged out." });
     }
 }
