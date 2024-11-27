@@ -10,11 +10,11 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, ChangeEvent } from "react";
 import axios from "axios";
 
 const Register = () => {
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -25,8 +25,7 @@ const Register = () => {
     confirmPassword: "",
   });
 
-  
-  const handleInputChange = (e: FormEvent<HTMLFormElement>) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -36,6 +35,8 @@ const Register = () => {
 
   const handleRegister = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Validate form fields
     if (
       !formData.firstName ||
       !formData.lastName ||
@@ -43,16 +44,16 @@ const Register = () => {
       !formData.password ||
       !formData.confirmPassword
     ) {
-      setError("All fields are required");
+      setError(["All fields are required!"]);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+      setError(["Passwords do not match"]);
       return;
     }
 
-    setError("");
+    setError([]);
     setLoading(true);
 
     try {
@@ -63,15 +64,17 @@ const Register = () => {
         password: formData.password,
       });
 
-      const data = await response.data;
-
-      console.log("**********");
-      console.log("data is ", data);
-      console.log("**********");
-
+      const data = response.data;
       alert("Registration successful!");
-    } catch (error) {
-      setError(error.message || "Something went wrong. Please try again.");
+    } catch (err: any) {
+      if (err.response && err.response.data?.errors) {
+        const errorsArray = err.response.data.errors.map(
+          (e: any) => e.description
+        );
+        setError(errorsArray);
+      } else {
+        setError(["Something went wrong. Please try again."]);
+      }
     } finally {
       setLoading(false);
     }
@@ -85,8 +88,15 @@ const Register = () => {
           <CardDescription>Create your account to get started.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={handleRegister}>
             <div className="grid w-full items-center gap-4">
+              {error.length > 0 && (
+                <div className="text-red-500 space-y-2">
+                  {error.map((e, index) => (
+                    <p key={index}>{e}</p>
+                  ))}
+                </div>
+              )}
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="firstName">First Name</Label>
                 <Input
@@ -141,12 +151,12 @@ const Register = () => {
                 />
               </div>
             </div>
+            <Button className="w-full mt-4" type="submit" disabled={loading}>
+              {loading ? "Registering..." : "Register"}
+            </Button>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-4">
-          <Button className="w-full" onClick={handleRegister}>
-            Register
-          </Button>
           <div className="w-full text-center text-sm">
             Already have an account?{" "}
             <Link to="/" className="text-primary hover:underline">

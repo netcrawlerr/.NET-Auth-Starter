@@ -17,11 +17,14 @@ import { Github, Twitter, Facebook } from "lucide-react";
 import { FormEvent, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/store/useStore";
 const Login = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+
+  const { setUser, isAuthenticated } = useAuthStore();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -42,6 +45,10 @@ const Login = () => {
     setRememberMe((prev) => !prev);
   };
 
+  console.log("**********");
+  console.log("is authenticated before handle login", isAuthenticated);
+  console.log("**********");
+
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
@@ -50,6 +57,10 @@ const Login = () => {
     }
     setError("");
     setLoading(true);
+    console.log("**********");
+    console.log("is autheticated", isAuthenticated);
+    console.log("**********");
+
     try {
       const response = await axios.post("/api/auth/login", {
         email: formData.email,
@@ -62,14 +73,24 @@ const Login = () => {
       console.log("Login Success", data);
       console.log("**********");
 
+      setUser(data);
+
+      console.log("**********");
+      console.log("is authenticated", isAuthenticated);
+      console.log("**********");
+
       navigate("/dashboard");
       // alert("Login successful!");
     } catch (error) {
-      console.log(error.response.data);
+      console.log(error.response.status);
 
-      setError(
-        error.response.data || "Something went wrong. Please try again."
-      );
+      if (error.response.status == 500) {
+        setError("Interval Server Error !");
+      } else {
+        setError(
+          error.response.data || "Something went wrong. Please try again."
+        );
+      }
     } finally {
       setLoading(false);
     }
