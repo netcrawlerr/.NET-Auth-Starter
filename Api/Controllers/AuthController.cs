@@ -117,6 +117,17 @@ public class AuthController : ControllerBase
             {
                 // optionally we can sign in the user
                 // await _signInManager.SignInAsync(user, isPersistent: false);
+
+                // var confirmationCode = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+                // var callbackurl = Url.Action(
+                //     "Confirm Email",
+                //     "Account",
+                //     new { userid = user.Id, confirmationCode },
+                //     protocol: HttpContext.Request.Scheme
+                // );
+
+                // await _mailService.SendMailAsync(sendEmailRequest);
                 return Ok("User Registered !");
             }
             else
@@ -198,30 +209,11 @@ public class AuthController : ControllerBase
             x.Email == resetPasswordRequestDto.Email
         );
 
-        // if (user == null)
-        // {
-        //     return NotFound("User not found.");
-        // }
-
-        // Verify the reset code and its expiration
-        // if (
-        //     user.ResetCode != resetPasswordRequestDto.Code
-        //     || user.ResetCodeExpiry < DateTime.UtcNow
-        // )
-        // {
-        //     return BadRequest("Invalid or expired reset code.");
-        // }
-
-        // Reset the password
         var passwordHash = new PasswordHasher<User>().HashPassword(
             user,
             resetPasswordRequestDto.Password
         );
         user.PasswordHash = passwordHash;
-
-        // // Clear the reset code and expiration
-        // user.ResetCode = null;
-        // user.ResetCodeExpiry = null;
 
         await _userManager.UpdateAsync(user);
 
