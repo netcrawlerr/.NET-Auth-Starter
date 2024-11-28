@@ -29,6 +29,7 @@ public class EmailSender : IMailService
         {
             throw new ArgumentNullException("Recipient email address cannot be null or empty.");
         }
+
         MailMessage mailMessage = new MailMessage
         {
             From = new MailAddress(_gmailOptions.Email),
@@ -36,10 +37,10 @@ public class EmailSender : IMailService
             Body = sendEmailRequest.Body,
         };
 
-        Random random = new Random();
-        int resetCode = random.Next(100000, 1000000);
+        // Random random = new Random();
+        // int resetCode = random.Next(100000, 1000000);
 
-        mailMessage.Body = $"Here Is Your Password Reset Code: {resetCode}";
+        // mailMessage.Body = $"Here Is Your Password Reset Code: {resetCode}";
 
         mailMessage.To.Add(sendEmailRequest.Recipient);
 
