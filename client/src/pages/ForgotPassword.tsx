@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { FormEvent, useState } from "react";
 
 const ForgotPassword = () => {
   const [loading, setLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);  
+  const [emailSent, setEmailSent] = useState(false);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -39,6 +39,7 @@ const ForgotPassword = () => {
     <div className="flex justify-center items-center h-screen">
       <Card className="w-[350px]">
         <CardHeader></CardHeader>
+        <CardTitle className="text-center mb-5">Reset Password</CardTitle>
         <CardContent>
           {emailSent ? (
             <div className="text-center">
