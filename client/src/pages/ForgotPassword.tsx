@@ -1,22 +1,50 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useRef } from "react";
 
 const ForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [codeEntered, setCodeEntered] = useState<string[]>(
+    new Array(6).fill("")
+  );
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);  
 
   const [formData, setFormData] = useState({
     email: "",
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    index: number
+  ) => {
+    const { value } = e.target;
+    const newCodeEntered = [...codeEntered];
+    newCodeEntered[index] = value;
+
+    if (value && index < codeEntered.length - 1) {
+      inputRefs.current[index + 1]?.focus();
+    }
+
+    setCodeEntered(newCodeEntered);
+  };
+
+  const handlePaste = (
+    e: React.ClipboardEvent<HTMLInputElement>,
+    index: number
+  ) => {
+    const pastedValue = e.clipboardData.getData("Text").slice(0, 6);
+    const newCodeEntered = pastedValue.split("");
+
+    setCodeEntered(
+      new Array(6).fill("").map((_, i) => newCodeEntered[i] || "")
+    );
+
+    const nextEmptyIndex = newCodeEntered.findIndex((digit) => !digit);
+    if (nextEmptyIndex !== -1) {
+      inputRefs.current[nextEmptyIndex]?.focus();
+    }
   };
 
   const handleResetPassword = async (e: FormEvent<HTMLFormElement>) => {
@@ -33,6 +61,10 @@ const ForgotPassword = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmitCode = () => {
+    console.log("Entered code:", codeEntered.join(""));
   };
 
   return (
@@ -55,6 +87,30 @@ const ForgotPassword = () => {
               >
                 Send Again
               </Button>
+              <div className="mt-4">
+                <h3 className="text-center mb-4">Enter Your 6-Digit Code</h3>
+                <div className="grid grid-cols-6 gap-2">
+                  {codeEntered.map((_, index) => (
+                    <Input
+                      key={index}
+                      type="text"
+                      maxLength={1}
+                      value={codeEntered[index]}
+                      onChange={(e) => handleInputChange(e, index)}
+                      onPaste={(e) => handlePaste(e, index)}
+                      ref={(el) => (inputRefs.current[index] = el)}
+                      className="text-center"
+                    />
+                  ))}
+                </div>
+                <Button
+                  className="mt-4 w-full"
+                  onClick={handleSubmitCode}
+                  disabled={loading || codeEntered.includes("")}
+                >
+                  Reset
+                </Button>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleResetPassword}>
@@ -66,7 +122,9 @@ const ForgotPassword = () => {
                     name="email"
                     required
                     value={formData.email}
-                    onChange={handleInputChange}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     placeholder="Enter your email"
                   />
                 </div>
