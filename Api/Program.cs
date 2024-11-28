@@ -1,8 +1,9 @@
 using Api.Data;
+using Api.Interfaces;
 using Api.Models;
+using Api.Options;
 using Api.Services;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,7 +12,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 
-builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.Configure<GmailOptions>(
+    builder.Configuration.GetSection(GmailOptions.GmailOptionKey)
+);
+
+builder.Services.AddScoped<IMailService, EmailSender>();
 
 // here i am registering the connection string for sql server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
