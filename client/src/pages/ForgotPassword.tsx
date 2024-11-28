@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import axios from "axios";
 import { FormEvent, useState, useRef } from "react";
 
 const ForgotPassword = () => {
@@ -9,10 +10,16 @@ const ForgotPassword = () => {
   const [codeEntered, setCodeEntered] = useState<string[]>(
     new Array(6).fill("")
   );
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);  
+
+  const [error, setError] = useState("");
+
+  const [codeVerified, setCodeVerified] = useState(false);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [formData, setFormData] = useState({
     email: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   const handleInputChange = (
@@ -53,18 +60,67 @@ const ForgotPassword = () => {
     setEmailSent(false);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const response = await axios.post("/api/auth/forgot-password", {
+        recipient: formData.email,
+      });
+      const data = await response.data;
       console.log("Email sent to:", formData.email);
       setEmailSent(true);
     } catch (error) {
-      console.error("Error sending email:", error);
+      console.error("Error sending email:", error.response.status);
+      if (error.response.status) {
+        setError("User Not Found");
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmitCode = () => {
+  const handleSubmitCode = async () => {
     console.log("Entered code:", codeEntered.join(""));
+    console.log("Email", formData.email);
+    setError("");
+
+    try {
+      const response = await axios.post("/api/auth/check-code", {
+        email: formData.email,
+        code: codeEntered.join(""),
+      });
+
+      const data = await response.data;
+      console.log(data);
+
+      setCodeVerified(true);
+      setEmailSent(false);
+    } catch (e) {
+      if (e.response.status == 400) {
+        setError("Invalid or Exipred Code");
+      }
+      console.error(e.response.status);
+    }
+  };
+
+  const handleSubmitNewPassword = async () => {
+    setError("");
+    if (formData.newPassword !== formData.confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await axios.post("/api/auth/reset-password/confirm", {
+        email: formData.email,
+        password: formData.newPassword,
+        code: "123456", // i just didnt remove from backend so i ahve to put smtng
+      });
+      const data = await response.data;
+      console.log(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -73,6 +129,7 @@ const ForgotPassword = () => {
         <CardHeader></CardHeader>
         <CardTitle className="text-center mb-5">Reset Password</CardTitle>
         <CardContent>
+          <span className="text-red-500 text-sm mb-3">{error}</span>
           {emailSent ? (
             <div className="text-center">
               <h2 className="text-lg font-bold">
@@ -104,14 +161,60 @@ const ForgotPassword = () => {
                   ))}
                 </div>
                 <Button
+                  variant={"destructive"}
                   className="mt-4 w-full"
                   onClick={handleSubmitCode}
                   disabled={loading || codeEntered.includes("")}
                 >
-                  Reset
+                  Verify Code
                 </Button>
               </div>
             </div>
+          ) : codeVerified ? (
+            // Render Reset Password Form if code is correct
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmitNewPassword();
+              }}
+            >
+              <div className="grid w-full items-center gap-4">
+                <div className="flex flex-col space-y-1.5">
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    name="newPassword"
+                    required
+                    value={formData.newPassword}
+                    onChange={(e) =>
+                      setFormData({ ...formData, newPassword: e.target.value })
+                    }
+                    placeholder="Enter new password"
+                  />
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    name="confirmPassword"
+                    required
+                    value={formData.confirmPassword}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
+                    placeholder="Confirm new password"
+                  />
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Resetting Password..." : "Reset Password"}
+                  </Button>
+                </div>
+              </div>
+            </form>
           ) : (
             <form onSubmit={handleResetPassword}>
               <div className="grid w-full items-center gap-4">
