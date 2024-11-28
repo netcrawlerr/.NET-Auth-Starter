@@ -1,6 +1,8 @@
 using Api.Data;
 using Api.Models;
+using Api.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
+
+builder.Services.AddTransient<IEmailSender, EmailSender>();
 
 // here i am registering the connection string for sql server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
