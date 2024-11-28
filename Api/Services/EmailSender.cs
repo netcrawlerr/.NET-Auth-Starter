@@ -1,28 +1,56 @@
-using Microsoft.AspNetCore.Identity.UI.Services;
-using SendGrid;
-using SendGrid.Helpers.Mail;
+using System.Net;
+using System.Net.Mail;
+using Api.Dtos;
+using Api.Interfaces;
+using Api.Options;
+using Microsoft.Extensions.Options;
 
 namespace Api.Services;
 
-public class EmailSender : IEmailSender
+public class EmailSender : IMailService
 {
-    public string SendGridKey { get; set; }
+    private readonly GmailOptions _gmailOptions;
 
-    public EmailSender(IConfiguration _config)
+    public EmailSender(IOptions<GmailOptions> gmailOptions)
     {
-        SendGridKey = _config.GetValue<string>("SendGrid:SecretKey");
+        _gmailOptions = gmailOptions.Value;
     }
 
-    public Task SendEmailAsync(string email, string subject, string htmlMessage)
+    public async Task SendMailAsync(SendEmailRequest sendEmailRequest)
     {
-        var client = new SendGridClient(SendGridKey);
+        if (string.IsNullOrEmpty(_gmailOptions.Email))
+        {
+            throw new ArgumentNullException(
+                "Gmail sender email address is missing in configuration."
+            );
+        }
 
-        var from_email = new EmailAddress("", "ASP.NET Authentication Identity Manager");
+        if (string.IsNullOrEmpty(sendEmailRequest.Recipient))
+        {
+            throw new ArgumentNullException("Recipient email address cannot be null or empty.");
+        }
+        MailMessage mailMessage = new MailMessage
+        {
+            From = new MailAddress(_gmailOptions.Email),
+            Subject = sendEmailRequest.Subject,
+            Body = sendEmailRequest.Body,
+        };
 
-        var to_email = new EmailAddress(email);
+        Random random = new Random();
+        int resetCode = random.Next(100000, 1000000);
 
-        var msg = MailHelper.CreateSingleEmail(from_email, to_email, subject, "", htmlMessage);
+        mailMessage.Body = $"Here Is Your Password Reset Code: {resetCode}";
 
-        return client.SendEmailAsync(msg);
+        mailMessage.To.Add(sendEmailRequest.Recipient);
+
+        using var smtpClient = new SmtpClient
+        {
+            Host = _gmailOptions.Host,
+            Port = _gmailOptions.Port,
+            Credentials = new NetworkCredential(_gmailOptions.Email, _gmailOptions.Password),
+            EnableSsl = true,
+        };
+
+        await smtpClient.SendMailAsync(mailMessage);
     }
 }
