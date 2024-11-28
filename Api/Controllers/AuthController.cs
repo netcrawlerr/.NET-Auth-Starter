@@ -140,9 +140,91 @@ public class AuthController : ControllerBase
 
     [HttpPost]
     [Route("forgot-password")]
-    public async Task<IActionResult> ResetPassword([FromBody] SendEmailRequest sendEmailRequest)
+    public async Task<IActionResult> SendResetPasswordEmail(
+        [FromBody] SendEmailRequest sendEmailRequest
+    )
     {
+        var user = await _userManager.Users.FirstOrDefaultAsync(x =>
+            x.Email == sendEmailRequest.Recipient
+        );
+
+        if (user == null)
+        {
+            return NotFound("User Not Found!");
+        }
+
+        Random random = new Random();
+        int resetCode = random.Next(100000, 1000000);
+
+        user.ResetCode = resetCode.ToString();
+        user.ResetCodeExpiry = DateTime.UtcNow.AddMinutes(5);
+
+        await _userManager.UpdateAsync(user);
+
+        sendEmailRequest.Body = $"Here is your password reset code: {resetCode}";
         await _mailService.SendMailAsync(sendEmailRequest);
-        return Ok("Email Sent SuccessFully");
+
+        return Ok("Reset code sent successfully.");
+    }
+
+    [HttpPost]
+    [Route("check-code")]
+    public async Task<IActionResult> CheckCode([FromBody] ResetCodeDto resetCodeDto)
+    {
+        var user = await _userManager.Users.FirstOrDefaultAsync(x => x.Email == resetCodeDto.Email);
+
+        if (user == null)
+        {
+            return NotFound("User Not Found!");
+        }
+
+        if (user.ResetCode != resetCodeDto.Code || user.ResetCodeExpiry < DateTime.UtcNow)
+        {
+            return BadRequest("Invalid or expired reset code.");
+        }
+
+        user.ResetCode = null;
+        user.ResetCodeExpiry = null;
+        return Ok("Code Correct");
+    }
+
+    [HttpPost]
+    [Route("reset-password/confirm")]
+    public async Task<IActionResult> ConfirmResetPassword(
+        [FromBody] ResetPasswordRequestDto resetPasswordRequestDto
+    )
+    {
+        var user = await _userManager.Users.FirstOrDefaultAsync(x =>
+            x.Email == resetPasswordRequestDto.Email
+        );
+
+        // if (user == null)
+        // {
+        //     return NotFound("User not found.");
+        // }
+
+        // Verify the reset code and its expiration
+        // if (
+        //     user.ResetCode != resetPasswordRequestDto.Code
+        //     || user.ResetCodeExpiry < DateTime.UtcNow
+        // )
+        // {
+        //     return BadRequest("Invalid or expired reset code.");
+        // }
+
+        // Reset the password
+        var passwordHash = new PasswordHasher<User>().HashPassword(
+            user,
+            resetPasswordRequestDto.Password
+        );
+        user.PasswordHash = passwordHash;
+
+        // // Clear the reset code and expiration
+        // user.ResetCode = null;
+        // user.ResetCodeExpiry = null;
+
+        await _userManager.UpdateAsync(user);
+
+        return Ok("Password reset successfully.");
     }
 }
