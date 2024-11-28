@@ -1,5 +1,7 @@
 using Api.Dtos;
+using Api.Interfaces;
 using Api.Models;
+using Api.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,10 +15,17 @@ public class AuthController : ControllerBase
     private readonly UserManager<User> _userManager;
     private readonly SignInManager<User> _signInManager;
 
-    public AuthController(UserManager<User> userManager, SignInManager<User> signInManager)
+    private readonly IMailService _mailService;
+
+    public AuthController(
+        UserManager<User> userManager,
+        SignInManager<User> signInManager,
+        IMailService mailService
+    )
     {
         _userManager = userManager;
         _signInManager = signInManager;
+        _mailService = mailService;
     }
 
     [HttpPost]
@@ -127,5 +136,13 @@ public class AuthController : ControllerBase
     {
         await _signInManager.SignOutAsync();
         return Ok(new { message = "Successfully logged out." });
+    }
+
+    [HttpPost]
+    [Route("forgot-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] SendEmailRequest sendEmailRequest)
+    {
+        await _mailService.SendMailAsync(sendEmailRequest);
+        return Ok("Email Sent SuccessFully");
     }
 }
