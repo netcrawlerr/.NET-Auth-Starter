@@ -38,6 +38,12 @@ public class ResourcesController : ControllerBase
                 Name = "Resource 4",
                 Description = "This is resource 4",
             },
+            new Resource
+            {
+                Id = 5,
+                Name = "Resource 5",
+                Description = "This is resource 5",
+            },
         };
 
         return await Task.FromResult(Ok(resourcesList));
