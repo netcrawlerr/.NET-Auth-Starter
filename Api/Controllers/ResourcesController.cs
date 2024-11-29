@@ -9,7 +9,6 @@ namespace Api.Controllers;
 public class ResourcesController : ControllerBase
 {
     [HttpGet]
-    [Authorize]
     public async Task<IActionResult> GetResources()
     {
         var resourcesList = new List<Resource>
