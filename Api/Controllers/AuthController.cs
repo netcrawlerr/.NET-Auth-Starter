@@ -1,7 +1,6 @@
 using Api.Dtos;
 using Api.Interfaces;
 using Api.Models;
-using Api.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -30,7 +29,7 @@ public class AuthController : ControllerBase
 
     [HttpPost]
     [Route("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequestDto)
+    public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequestDto) 
     {
         try
         {
